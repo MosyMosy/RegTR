@@ -144,7 +144,7 @@ def load_point_cloud(fname):
         pcd = o3d.io.read_point_cloud(fname)
         data = np.asarray(pcd.points)
     elif fname.endswith('.bin'):
-        data = np.fromfile(fname, dtype=np.float32).reshape(-1, 4)
+        data = np.fromfile(fname, dtype=float).reshape(-1, 4)
     else:
         raise AssertionError('Cannot recognize point cloud format')
 

@@ -38,7 +38,7 @@ def read_trajectory(filename, dim=4):
             if i % 5 != 0:
                 traj.append(lines[i].split('\t')[0:dim])
 
-        traj = np.asarray(traj, dtype=np.float).reshape(-1, dim, dim)
+        traj = np.asarray(traj, dtype=float).reshape(-1, dim, dim)
 
         final_keys = np.asarray(final_keys)
 
@@ -74,7 +74,7 @@ def read_trajectory_info(filename, dim=6):
              contents[i * 7 + 1:i * 7 + 7]], axis=0)
         info_list.append(info_matrix)
 
-    cov_matrix = np.asarray(info_list, dtype=np.float).reshape(-1, dim, dim)
+    cov_matrix = np.asarray(info_list, dtype=float).reshape(-1, dim, dim)
 
     return n_frame, cov_matrix
 

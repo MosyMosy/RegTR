@@ -167,7 +167,7 @@ def spherical_Lloyd(radius, num_cells, dimension=3, fixed='center', approximatio
         centers = []
         for c in range(num_cells):
             bool_c = (cell_inds == c)
-            num_c = np.sum(bool_c.astype(np.int32))
+            num_c = np.sum(bool_c.astype(int))
             if num_c > 0:
                 centers.append(np.sum(X[bool_c, :], axis=0) / num_c)
             else:
@@ -436,12 +436,12 @@ def load_kernels(radius, num_kpoints, dimension, fixed, lloyd=False):
     if dimension == 2:
         if fixed != 'vertical':
             c, s = np.cos(theta), np.sin(theta)
-            R = np.array([[c, -s], [s, c]], dtype=np.float32)
+            R = np.array([[c, -s], [s, c]], dtype=float)
 
     elif dimension == 3:
         if fixed != 'vertical':
             c, s = np.cos(theta), np.sin(theta)
-            R = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype=np.float32)
+            R = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype=float)
 
         else:
             phi = (np.random.rand() - 0.5) * np.pi
@@ -455,7 +455,7 @@ def load_kernels(radius, num_kpoints, dimension, fixed, lloyd=False):
             # Create the rotation matrix with this vector and angle
             R = create_3D_rotations(np.reshape(u, (1, -1)), np.reshape(alpha, (1, -1)))[0]
 
-            R = R.astype(np.float32)
+            R = R.astype(float)
 
     # Add a small noise
     kernel_points = kernel_points + np.random.normal(scale=0.01, size=kernel_points.shape)
@@ -466,4 +466,4 @@ def load_kernels(radius, num_kpoints, dimension, fixed, lloyd=False):
     # Rotate kernels
     kernel_points = np.matmul(kernel_points, R)
 
-    return kernel_points.astype(np.float32)
+    return kernel_points.astype(float)

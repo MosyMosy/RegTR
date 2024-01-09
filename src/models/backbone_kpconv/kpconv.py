@@ -705,7 +705,7 @@ def calibrate_neighbors(dataset, config, collate_fn=collate_fn_descriptor, keep_
 
     # From config parameter, compute higher bound of neighbors number in a neighborhood
     hist_n = int(np.ceil(4 / 3 * np.pi * (config.deform_radius + 1) ** 3))
-    neighb_hists = np.zeros((config.num_layers, hist_n), dtype=np.int32)
+    neighb_hists = np.zeros((config.num_layers, hist_n), dtype=int)
 
     # Get histogram of neighborhood sizes i in 1 epoch max.
     for i in range(len(dataset)):

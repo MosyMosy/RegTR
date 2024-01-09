@@ -101,8 +101,8 @@ class VTKObject:
         #   because the numpy_support function creates a pointer into it
         # - Note that the cell array looks like this: [1 vtx0 1 vtx1 1 vtx2 1 vtx3 ... ]
         #   because it consists of vertices with one primitive per cell
-        self.cells_npy = np.vstack([np.ones(nCoords, dtype=np.int64),
-                                    np.arange(nCoords, dtype=np.int64)]).T.flatten()
+        self.cells_npy = np.vstack([np.ones(nCoords, dtype=int64),
+                                    np.arange(nCoords, dtype=int64)]).T.flatten()
 
         self.cells.SetCells(nCoords, numpy_support.numpy_to_vtkIdTypeArray(self.cells_npy))
 
@@ -365,8 +365,8 @@ class VTKObject:
             lines = np.array(lines)
         if not isinstance(line_color, np.ndarray):
             line_color = np.array(line_color)
-        if issubclass(line_color.dtype.type, np.integer):
-            line_color = line_color.astype(np.float64) / 255
+        if issubclass(line_color.dtype.type, integer):
+            line_color = line_color.astype(float) / 255
 
         assert lines.ndim == 2 and lines.shape[1] == 6, \
             'Lines should be a list with each element containing 6 values'

@@ -161,7 +161,7 @@ class ModelNetHdf(Dataset):
         self._transform = transform
 
     def __getitem__(self, item):
-        sample = {'points': self._data[item, :, :], 'label': self._labels[item], 'idx': np.array(item, dtype=np.int32)}
+        sample = {'points': self._data[item, :, :], 'label': self._labels[item], 'idx': np.array(item, dtype=int)}
 
         # Apply perturbation
         if self._transform:
@@ -202,7 +202,7 @@ class ModelNetHdf(Dataset):
         for fname in fnames:
             f = h5py.File(fname, mode='r')
             data = np.concatenate([f['data'][:], f['normal'][:]], axis=-1)
-            labels = f['label'][:].flatten().astype(np.int64)
+            labels = f['label'][:].flatten().astype(int64)
 
             if categories is not None:  # Filter out unwanted categories
                 mask = np.isin(labels, categories).flatten()

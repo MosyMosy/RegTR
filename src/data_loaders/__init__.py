@@ -4,9 +4,10 @@ import data_loaders.transforms
 import data_loaders.modelnet as modelnet
 from data_loaders.collate_functions import collate_pair
 from data_loaders.threedmatch import ThreeDMatchDataset
-
+from data_loaders.tless import T_Less
 import torchvision
 
+    
 
 def get_dataloader(cfg, phase, num_workers=0):
 
@@ -37,7 +38,23 @@ def get_dataloader(cfg, phase, num_workers=0):
             dataset = modelnet.get_train_datasets(cfg)[1]
         elif phase == 'test':
             dataset = modelnet.get_test_datasets(cfg)
+    
+    elif cfg.dataset == 'tless':
+        if phase == 'train':
+            # Apply training data augmentation (Pose perturbation and jittering)
+            transforms_aug = torchvision.transforms.Compose([
+                data_loaders.transforms.RigidPerturb(perturb_mode=cfg.perturb_pose),
+                data_loaders.transforms.Jitter(scale=cfg.augment_noise),
+                data_loaders.transforms.ShufflePoints(max_pts=max(cfg.obj_point_size, cfg.scene_point_size)),
+            ])
+        else:
+            transforms_aug = None
 
+        dataset = T_Less(
+            cfg=cfg,
+            phase=phase,
+            transforms=transforms_aug,
+        )
     else:
         raise AssertionError('Invalid dataset')
 
@@ -49,11 +66,11 @@ def get_dataloader(cfg, phase, num_workers=0):
     shuffle = phase == 'train'
 
     data_loader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        collate_fn=collate_pair,
+    dataset,
+    batch_size=batch_size,
+    shuffle=shuffle,
+    num_workers=num_workers,
+    collate_fn=collate_pair,
     )
     return data_loader
 

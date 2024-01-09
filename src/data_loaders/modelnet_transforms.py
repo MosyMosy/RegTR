@@ -183,7 +183,7 @@ class RandomCrop:
     def __init__(self, p_keep: List = None):
         if p_keep is None:
             p_keep = [0.7, 0.7]  # Crop both clouds to 70%
-        self.p_keep = np.array(p_keep, dtype=np.float32)
+        self.p_keep = np.array(p_keep, dtype=float)
 
     @staticmethod
     def crop(points, p_keep):
@@ -278,7 +278,7 @@ class RandomTransformSE3:
 
         # Generate translation
         rand_trans = np.random.uniform(-trans_mag, trans_mag, 3)
-        rand_SE3 = np.concatenate((rand_rot, rand_trans[:, None]), axis=1).astype(np.float32)
+        rand_SE3 = np.concatenate((rand_rot, rand_trans[:, None]), axis=1).astype(float)
 
         return rand_SE3
 
@@ -351,7 +351,7 @@ class RandomTransformSE3_euler(RandomTransformSE3):
         R_ab = Rx @ Ry @ Rz
         t_ab = np.random.uniform(-trans_mag, trans_mag, 3)
 
-        rand_SE3 = np.concatenate((R_ab, t_ab[:, None]), axis=1).astype(np.float32)
+        rand_SE3 = np.concatenate((R_ab, t_ab[:, None]), axis=1).astype(float)
         return rand_SE3
 
 
@@ -366,7 +366,7 @@ class RandomRotatorZ(RandomTransformSE3):
 
         rand_rot_deg = np.random.random() * self._rot_mag
         rand_rot = Rotation.from_euler('z', rand_rot_deg, degrees=True).as_dcm()
-        rand_SE3 = np.pad(rand_rot, ((0, 0), (0, 1)), mode='constant').astype(np.float32)
+        rand_SE3 = np.pad(rand_rot, ((0, 0), (0, 1)), mode='constant').astype(float)
 
         return rand_SE3
 
@@ -436,5 +436,5 @@ class Dict2PointnetLKList:
         else:
             # Train PointNetLK
             transform_gt_4x4 = np.concatenate([sample['transform_gt'],
-                                               np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)], axis=0)
+                                               np.array([[0.0, 0.0, 0.0, 1.0]], dtype=float)], axis=0)
             return sample['points_src'][:, :3], sample['points_ref'][:, :3], transform_gt_4x4

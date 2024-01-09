@@ -11,14 +11,14 @@ from utils.misc import load_config
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--benchmark', type=str, help='Benchmark dataset', default='3DMatch',
-                    choices=['3DMatch', '3DLoMatch', 'ModelNet', 'ModelLoNet'])
+parser.add_argument('--benchmark', type=str, help='Benchmark dataset', default='T-Less',
+                    choices=['3DMatch', '3DLoMatch', 'ModelNet', 'ModelLoNet', "T-Less"])
 # General
 parser.add_argument('--config', type=str, help='Path to the config file.')
 # Logging
 parser.add_argument('--logdir', type=str, default='../logs',
                     help='Directory to store logs, summaries, checkpoints.')
-parser.add_argument('--dev', action='store_true',
+parser.add_argument('--dev', action='store_true', default=True,
                     help='If true, will ignore logdir and log to ../logdev instead')
 parser.add_argument('--name', type=str,
                     help='Prefix to add to logging directory')
@@ -26,7 +26,7 @@ parser.add_argument('--name', type=str,
 parser.add_argument('--num_workers', type=int, default=0,
                     help='Number of worker threads for dataloader')
 # Training and model options
-parser.add_argument('--resume', type=str, help='Checkpoint to resume from')
+parser.add_argument('--resume', default="../logs/tless/240104_165752_regtr_regressCoor/ckpt/model-20212.pth", type=str, help='Checkpoint to resume from')
 
 
 opt = parser.parse_args()
@@ -63,6 +63,10 @@ def main():
         assert opt.benchmark in ['ModelNet', 'ModelLoNet'], \
             "Benchmark for modelnet dataset must be one of ['ModelNet', 'ModelLoNet']"
         cfg.partial = [0.7, 0.7] if opt.benchmark == 'ModelNet' else [0.5, 0.5]
+    elif cfg.dataset == "tless":
+        assert opt.benchmark in ['T-Less'], \
+            "Benchmark for tless dataset must be T-Less:"
+        cfg.benchmark = opt.benchmark
 
     test_loader = get_dataloader(cfg, phase='test')
     Model = get_model(cfg.model)

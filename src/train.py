@@ -10,6 +10,10 @@ from models import get_model
 from trainer import Trainer
 from utils.misc import load_config
 
+import sys
+# caution: path[0] is reserved for script path (or '' in REPL)
+sys.path.insert(1, os.path.join(os.getcwd(), "src"))
+
 # setup_seed(0, cudnn_deterministic=False)
 
 #############
@@ -18,7 +22,7 @@ from utils.misc import load_config
 #############
 parser = argparse.ArgumentParser()
 # General
-parser.add_argument('--config', type=str, help='Path to the config file.')
+parser.add_argument('--config', type=str, default="conf/tless.yaml", help='Path to the config file.')
 # Logging
 parser.add_argument('--logdir', type=str, default='../logs',
                     help='Directory to store logs, summaries, checkpoints.')
@@ -33,7 +37,7 @@ parser.add_argument('--validate_every', type=int, default=-1,
 parser.add_argument('--debug', action='store_true',
                     help='If set, will enable autograd anomaly detection')
 # Misc
-parser.add_argument('--num_workers', type=int, default=4,
+parser.add_argument('--num_workers', type=int, default=8,
                     help='Number of worker threads for dataloader')
 # Training and model options
 parser.add_argument('--resume', type=str, help='Checkpoint to resume from')
@@ -54,7 +58,7 @@ if opt.config is None:
         else:
             print('Config not found in resume directory')
             exit(-2)
-
+# print(os.getcwd())
 cfg = EasyDict(load_config(opt.config))
 
 # Hack: Stores different datasets to its own subdirectory

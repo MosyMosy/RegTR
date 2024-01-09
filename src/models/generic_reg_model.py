@@ -62,6 +62,7 @@ class GenericRegModel(GenericModel, ABC):
         self.logger.info(f'Using optimizer {self.optimizer} with scheduler {self.scheduler}')
 
     def training_step(self, batch, batch_idx):
+
         pred = self.forward(batch)
         losses = self.compute_loss(pred, batch)
 
@@ -136,6 +137,8 @@ class GenericRegModel(GenericModel, ABC):
         # Dataset specific handling
         if self.cfg.dataset == '3dmatch':
             self._save_3DMatch_log(batch, pred)
+        elif self.cfg.dataset == "tless":
+            self._save_TLess_log(batch, pred)
 
         elif self.cfg.dataset == 'modelnet':
             modelnet_data = {
@@ -264,6 +267,29 @@ class GenericRegModel(GenericModel, ABC):
             scene = batch['src_path'][b].split(os.path.sep)[1]
             src_idx = int(os.path.basename(batch['src_path'][b]).split('_')[-1].replace('.pth', ''))
             tgt_idx = int(os.path.basename(batch['tgt_path'][b]).split('_')[-1].replace('.pth', ''))
+
+            pred_pose_np = to_numpy(pred['pose'][-1][b]) if pred['pose'].ndim == 4 else \
+                to_numpy(pred['pose'][b])
+            if pred_pose_np.shape[0] == 3:
+                pred_pose_np = np.concatenate([pred_pose_np, [[0., 0., 0., 1.]]], axis=0)
+
+            scene_folder = os.path.join(self._log_path, self.cfg.benchmark, scene)
+            os.makedirs(scene_folder, exist_ok=True)
+            est_log_path = os.path.join(scene_folder, 'est.log')
+            with open(est_log_path, 'a') as fid:
+                # We don't know the number of frames, so just put -1
+                # This will be ignored by the benchmark function in any case
+                fid.write('{}\t{}\t{}\n'.format(tgt_idx, src_idx, -1))
+                for i in range(4):
+                    fid.write('\t'.join(map('{0:.12f}'.format, pred_pose_np[i])) + '\n')
+                    
+    def _save_TLess_log(self, batch, pred):
+        B = len(batch['src_xyz'])
+
+        for b in range(B):
+            scene = batch['tgt_path'][b].split(os.path.sep)[-3]
+            src_idx = int(os.path.basename(batch['src_path'][b]).split(os.path.sep)[-1].replace('.ply', '').replace('obj_', ''))
+            tgt_idx = int(os.path.basename(batch['tgt_path'][b]).split(os.path.sep)[-1].replace('.ply', ''))
 
             pred_pose_np = to_numpy(pred['pose'][-1][b]) if pred['pose'].ndim == 4 else \
                 to_numpy(pred['pose'][b])
