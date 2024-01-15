@@ -372,4 +372,95 @@ def benchmark(est_folder, gt_folder, require_individual_errors=False):
         return benchmark_str, np.mean(recall), df
     else:
         return benchmark_str, np.mean(recall)
+    
+    
+    
+def benchmark_tless(est_folder, gt_folder, require_individual_errors=False):
+    scenes = sorted(os.listdir(gt_folder))
+    scene_names = [os.path.join(gt_folder, ele) for ele in scenes]
+
+    re_per_scene = defaultdict(list)
+    te_per_scene = defaultdict(list)
+    re_all, te_all, precision, recall = [], [], [], []
+    n_valids = []
+    
+    benchmark_str = "Scene\t¦ prec.\t¦ rec.\t¦ re\t¦ te\t¦ samples\t¦\n"
+
+    df = pd.DataFrame()
+
+    for idx, scene in enumerate(scene_names):
+        # ground truth info
+        gt_pairs, gt_traj = read_trajectory(os.path.join(scene, "gt.log"))
+        n_valid = 0
+        for ele in gt_pairs:
+            diff = abs(int(ele[0]) - int(ele[1]))
+            n_valid += diff > 1
+        n_valids.append(n_valid)
+
+        n_fragments, gt_traj_cov = read_trajectory_info(os.path.join(scene, "gt.info"))
+
+        # estimated info
+        est_pairs, est_traj = read_trajectory(os.path.join(est_folder, scenes[idx], 'est.log'))
+
+        temp_precision, temp_recall, c_flag, errors = evaluate_registration(n_fragments, est_traj,
+                                                                            est_pairs, gt_pairs,
+                                                                            gt_traj, gt_traj_cov)
+
+        if require_individual_errors:
+            df_cur = pd.DataFrame(data={'scene': os.path.basename(scene),
+                                        'src': est_pairs[:, 0],
+                                        'tgt': est_pairs[:, 1],
+                                        'errors':errors})
+            df = df.append(df_cur)
+
+        # Filter out the estimated rotation matrices
+        ext_gt_traj = extract_corresponding_trajectors(est_pairs, gt_pairs, gt_traj)
+
+        re = rotation_error(torch.from_numpy(ext_gt_traj[:, 0:3, 0:3]),
+                            torch.from_numpy(est_traj[:, 0:3, 0:3])).cpu().numpy()[
+            np.array(c_flag) == 0]
+        te = translation_error(torch.from_numpy(ext_gt_traj[:, 0:3, 3:4]),
+                               torch.from_numpy(est_traj[:, 0:3, 3:4])).cpu().numpy()[
+            np.array(c_flag) == 0]
+
+        re_per_scene['mean'].append(np.mean(re))
+        re_per_scene['median'].append(np.median(re))
+        re_per_scene['min'].append(np.min(re) if len(re) > 0 else float('nan'))
+        re_per_scene['max'].append(np.max(re) if len(re) > 0 else float('nan'))
+
+        te_per_scene['mean'].append(np.mean(te))
+        te_per_scene['median'].append(np.median(te))
+        te_per_scene['min'].append(np.min(te) if len(te) > 0 else float('nan'))
+        te_per_scene['max'].append(np.max(te) if len(te) > 0 else float('nan'))
+
+        re_all.extend(re.reshape(-1).tolist())
+        te_all.extend(te.reshape(-1).tolist())
+
+        precision.append(temp_precision)
+        recall.append(temp_recall)
+
+        benchmark_str += \
+            "{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:3d}¦\n".format(scenes[idx],
+                                                                            temp_precision,
+                                                                            temp_recall,
+                                                                            np.median(re),
+                                                                            np.median(te), n_valid)
+        np.save(f'{est_folder}/{scenes[idx]}/flag.npy', c_flag)
+        np.save(f'{est_folder}/{scenes[idx]}/errors.npy', errors)
+
+    weighted_precision = (np.array(n_valids) * np.array(precision)).sum() / np.sum(n_valids)
+
+    benchmark_str += "Mean precision: {:.3f}: +- {:.3f}\n".format(np.mean(precision),
+                                                                  np.std(precision))
+    benchmark_str += "Weighted precision: {:.3f}\n".format(weighted_precision)
+
+    benchmark_str += "Mean median RRE: {:.3f}: +- {:.3f}\n".format(np.mean(re_per_scene['median']),
+                                                                   np.std(re_per_scene['median']))
+    benchmark_str += "Mean median RTE: {:.3F}: +- {:.3f}\n".format(np.mean(te_per_scene['median']),
+                                                                   np.std(te_per_scene['median']))
+
+    if require_individual_errors:
+        return benchmark_str, np.mean(recall), df
+    else:
+        return benchmark_str, np.mean(recall)
 

@@ -26,7 +26,7 @@ parser.add_argument('--name', type=str,
 parser.add_argument('--num_workers', type=int, default=0,
                     help='Number of worker threads for dataloader')
 # Training and model options
-parser.add_argument('--resume', default="../logs/tless/240104_165752_regtr_regressCoor/ckpt/model-20212.pth", type=str, help='Checkpoint to resume from')
+parser.add_argument('--resume', default="../logs/tless/240109_191615_regtr_regressCoor/ckpt/model-181908.pth", type=str, help='Checkpoint to resume from')
 
 
 opt = parser.parse_args()

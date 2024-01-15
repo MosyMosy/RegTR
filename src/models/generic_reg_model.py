@@ -10,7 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 from cvhelpers.torch_helpers import to_numpy
 from models.generic_model import GenericModel
 from models.scheduler.warmup import WarmUpScheduler
-from benchmark.benchmark_predator import benchmark as benchmark_predator
+from benchmark.benchmark_predator import benchmark as benchmark_predator, benchmark_tless
 import benchmark.benchmark_modelnet as benchmark_modelnet
 from utils.misc import StatsMeter, metrics_to_string
 from utils.se3_torch import se3_compare
@@ -177,14 +177,20 @@ class GenericRegModel(GenericModel, ABC):
         log_str += metrics_to_string(avg_metrics, '[Metrics]') + '\n'
         self.logger.info(log_str)
 
-        if self.cfg.dataset == '3dmatch':
+        if self.cfg.dataset =='3dmatch':
             # Evaluate 3DMatch registration recall
             results_str, mean_precision = benchmark_predator(
                 os.path.join(self._log_path, self.cfg.benchmark),
-                os.path.join('datasets', '3dmatch', 'benchmarks', self.cfg.benchmark))
+                os.path.join('datasets', self.cfg.dataset, 'benchmarks', self.cfg.benchmark))
             self.logger.info('\n' + results_str)
             return mean_precision
-
+        elif self.cfg.dataset == 'tless':
+            results_str, mean_precision = benchmark_tless(
+                os.path.join(self._log_path, self.cfg.benchmark),
+                os.path.join(self._log_path, self.cfg.benchmark))
+            self.logger.info('\n' + results_str)
+            return mean_precision
+            
         elif self.cfg.dataset == 'modelnet':
             metric_keys = self.modelnet_metrics[0].keys()
             metrics_cat = {k: np.concatenate([m[k] for m in self.modelnet_metrics])
@@ -295,13 +301,23 @@ class GenericRegModel(GenericModel, ABC):
                 to_numpy(pred['pose'][b])
             if pred_pose_np.shape[0] == 3:
                 pred_pose_np = np.concatenate([pred_pose_np, [[0., 0., 0., 1.]]], axis=0)
+                
+            gt_pose_np = to_numpy(batch['pose'][-1][b]) if batch['pose'].ndim == 4 else \
+                to_numpy(batch['pose'][b])
+            if gt_pose_np.shape[0] == 3:
+                gt_pose_np = np.concatenate([gt_pose_np, [[0., 0., 0., 1.]]], axis=0)
 
             scene_folder = os.path.join(self._log_path, self.cfg.benchmark, scene)
             os.makedirs(scene_folder, exist_ok=True)
             est_log_path = os.path.join(scene_folder, 'est.log')
-            with open(est_log_path, 'a') as fid:
+            gt_log_path = os.path.join(scene_folder, 'gt.log')
+            with open(est_log_path, 'a') as fid, open(gt_log_path, 'a') as fgt:
                 # We don't know the number of frames, so just put -1
                 # This will be ignored by the benchmark function in any case
                 fid.write('{}\t{}\t{}\n'.format(tgt_idx, src_idx, -1))
                 for i in range(4):
                     fid.write('\t'.join(map('{0:.12f}'.format, pred_pose_np[i])) + '\n')
+                    
+                fgt.write('{}\t{}\t{}\n'.format(tgt_idx, src_idx, -1))
+                for i in range(4):
+                    fgt.write('\t'.join(map('{0:.12f}'.format, gt_pose_np[i])) + '\n')

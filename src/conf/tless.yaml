@@ -14,7 +14,7 @@ dataset:
     scene_point_size: 40960
 
 train_options:
-    niter: -70  # Actually just need 40-50 epochs.
+    niter: -400  # 400 epochs - -70  # Actually just need 40-50 epochs.
 
 solver:
     optimizer: AdamW
@@ -22,7 +22,7 @@ solver:
     weight_decay: 0.0001
     grad_clip: 0.1
     scheduler: 'step'
-    scheduler_param: [205860, 0.5]  # Decay by 0.5 every 20 epochs
+    scheduler_param: [127800, 0.5]  # Decay by 0.5 every 100 epochs - [205860, 0.5]  # Decay by 0.5 every 20 epochs
 
 
 # Use the same processing or backbone as Predator

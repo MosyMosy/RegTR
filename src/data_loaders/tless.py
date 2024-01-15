@@ -25,38 +25,7 @@ from torchvision.transforms.functional import pil_to_tensor
 from PIL import Image
 import open3d as o3d
 import cv2
-
-def generate_pcl_dataset(root, pcl_size):
-        setup_dirs = [name for name in os.listdir(
-            root) if os.path.isdir(root)]
-        for setup_dir in setup_dirs:
-            scene_gt_path = os.path.join(root, setup_dir, "scene_gt.json")
-            camera_gt_path = os.path.join(
-                root, setup_dir, "scene_camera.json")
-            with open(scene_gt_path) as scenes_f, open(camera_gt_path) as camera_f:
-                scenes_dic = json.load(scenes_f)
-                cameras_dic = json.load(camera_f)
-                for scene_id, _ in scenes_dic.items():
-                    setup_path = os.path.join(root, setup_dir)
-                    depth_path = os.path.join(setup_path, "depth", str(int(scene_id)).zfill(6) + ".png")
-                    
-                    cam_depth_scale = 1 / cameras_dic[scene_id]["depth_scale"]
-                    cam_K = np.array(cameras_dic[scene_id]["cam_K"]).reshape(3, 3)
-                    depth_im = o3d.io.read_image(depth_path)
-                    im_width, im_height = depth_im.get_max_bound()
-                    pinhole_cam = o3d.camera.PinholeCameraIntrinsic(
-                        int(im_width), int(im_height), cam_K)
-                    scene_pcl = o3d.geometry.PointCloud.create_from_depth_image(
-                        depth_im, pinhole_cam, depth_scale=cam_depth_scale, depth_trunc=1000)
-                    scene_pcl = scene_pcl.farthest_point_down_sample(
-                        pcl_size)
-                    
-                    pcl_path = os.path.join(setup_path, "pcl")
-                    if not os.path.exists(pcl_path):
-                        os.makedirs(pcl_path)
-                    o3d.io.write_point_cloud(os.path.join(pcl_path, str(int(scene_id)).zfill(6) + ".ply"), scene_pcl)
-                    print(root + " " + setup_dir + " " + scene_id, end="\r")
-                    
+               
                     
 class T_Less(Dataset):
 
@@ -264,10 +233,9 @@ class T_Less(Dataset):
 
 class T_Less_pcl_generator(Dataset):
 
-    def __init__(self, cfg, phase, transforms=None):
+    def __init__(self, cfg, phase, transforms=None, obj_id_list=[5], vis_ratio = 0.7):
         super().__init__()
         self.logger = logging.getLogger(__name__)
-
                    
         self.root = None
         if isinstance(cfg.root, str):
@@ -345,4 +313,4 @@ class T_Less_pcl_generator(Dataset):
         # if not os.path.exists(pcl_path):
         #     os.makedirs(pcl_path)
         # o3d.io.write_point_cloud(os.path.join(pcl_path, str(self.selected_scenes[ind]["scene_id"]).zfill(6) + ".ply"), scene_pcl)
-        return {"info": self.selected_scenes[ind], "pcl": pcl}
+        return {"dir": self.selected_scenes[ind]["dir"], "scene_id": self.selected_scenes[ind]["scene_id"], "pcl": pcl}

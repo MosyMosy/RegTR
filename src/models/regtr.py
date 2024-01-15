@@ -134,6 +134,7 @@ class RegTR(GenericRegModel):
         ####################
         # KPConv encoder (downsampling) to obtain unconditioned features
         feats_un, skip_x = self.kpf_encoder(feats0, kpconv_meta)
+        
         if _TIMEIT:
             t_end_enc_cuda.record()
             torch.cuda.synchronize()
