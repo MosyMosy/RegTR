@@ -14,6 +14,9 @@ from benchmark.benchmark_predator import benchmark as benchmark_predator, benchm
 import benchmark.benchmark_modelnet as benchmark_modelnet
 from utils.misc import StatsMeter, metrics_to_string
 from utils.se3_torch import se3_compare
+from utils.se3_numpy import se3_transform
+
+import open3d as o3d
 
 
 class GenericRegModel(GenericModel, ABC):
@@ -289,7 +292,7 @@ class GenericRegModel(GenericModel, ABC):
                 for i in range(4):
                     fid.write('\t'.join(map('{0:.12f}'.format, pred_pose_np[i])) + '\n')
                     
-    def _save_TLess_log(self, batch, pred):
+    def _save_TLess_log_(self, batch, pred):
         B = len(batch['src_xyz'])
 
         for b in range(B):
@@ -321,3 +324,79 @@ class GenericRegModel(GenericModel, ABC):
                 fgt.write('{}\t{}\t{}\n'.format(tgt_idx, src_idx, -1))
                 for i in range(4):
                     fgt.write('\t'.join(map('{0:.12f}'.format, gt_pose_np[i])) + '\n')
+                    
+    
+    
+    def _save_TLess_log(self, batch, pred):
+        B = len(batch['src_xyz'])
+
+        for b in range(B):
+            scene = batch['tgt_path'][b].split(os.path.sep)[-3]
+            src_idx = int(os.path.basename(batch['src_path'][b]).split(os.path.sep)[-1].replace('.ply', '').replace('obj_', ''))
+            tgt_idx = int(os.path.basename(batch['tgt_path'][b]).split(os.path.sep)[-1].replace('.ply', ''))
+            log_file_path = os.path.join(self._log_path, self.cfg.benchmark, scene)
+
+            pred_pose_np = to_numpy(pred['pose'][-1][b]) if pred['pose'].ndim == 4 else \
+                to_numpy(pred['pose'][b])
+            if pred_pose_np.shape[0] == 3:
+                pred_pose_np = np.concatenate([pred_pose_np, [[0., 0., 0., 1.]]], axis=0)
+                
+            gt_pose_np = to_numpy(batch['pose'][-1][b]) if batch['pose'].ndim == 4 else \
+                to_numpy(batch['pose'][b])
+            if gt_pose_np.shape[0] == 3:
+                gt_pose_np = np.concatenate([gt_pose_np, [[0., 0., 0., 1.]]], axis=0)
+
+            scene_pcl_path = batch['tgt_path'][b]
+            obj_mesh_path = batch['src_path'][b]
+            
+            pcl_log_path = os.path.join(
+                log_file_path, str(tgt_idx) + "-" + str(src_idx))
+            if not os.path.exists(pcl_log_path):
+                os.makedirs(pcl_log_path)
+            # shutil.copy(scene_pcl_path, pcl_log_path)
+            scene_pcl = o3d.io.read_point_cloud(scene_pcl_path)
+            scene_xyz = np.array(scene_pcl.points, dtype=np.float32)
+
+            obj_mesh = o3d.io.read_triangle_mesh(obj_mesh_path)
+            obj_mesh.compute_vertex_normals()
+            obj_pcl = obj_mesh.sample_points_uniformly(
+                number_of_points=4096)
+            obj_xyz = np.array(obj_pcl.points)
+            
+            scale = 1/np.max(np.sqrt(np.sum(scene_xyz**2, axis=1)))
+            scene_xyz = scene_xyz * scale                
+            scene_center = np.mean([(np.min(scene_xyz[:, i]), np.max(scene_xyz[:, i])) for i in range(3)], axis=1)
+            scene_xyz = scene_xyz - scene_center
+            obj_xyz = obj_xyz * scale    
+            
+            pcd = o3d.geometry.PointCloud()
+            pcd.points = o3d.utility.Vector3dVector(scene_xyz)
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, str(tgt_idx).zfill(6) + ".ply"), pcd)
+            
+            # pcd.points = o3d.utility.Vector3dVector(scene_xyz[to_numpy(batch["tgt_overlap"][b])])
+            # o3d.io.write_point_cloud(os.path.join(
+            #     pcl_log_path, str(tgt_idx).zfill(6) +  "overlap_gt" + ".ply"), pcd)
+            
+            # pcd.points = o3d.utility.Vector3dVector(scene_xyz[np.array(to_numpy(pred["tgt_overlap"][b]), dtype=bool)])
+            # o3d.io.write_point_cloud(os.path.join(
+            #     pcl_log_path, str(tgt_idx).zfill(6) +  "overlap_est" + ".ply"), pcd)
+            
+            # pcd.points = o3d.utility.Vector3dVector(scene_xyz[to_numpy(batch["correspondences"][b][1])])
+            # o3d.io.write_point_cloud(os.path.join(
+            #     pcl_log_path, str(tgt_idx).zfill(6) +  "corres_gt" + ".ply"), pcd)
+            
+            # pcd.points = o3d.utility.Vector3dVector(scene_xyz[np.array(to_numpy(pred["tgt_kp"][b][1]), dtype=bool)])
+            # o3d.io.write_point_cloud(os.path.join(
+            #     pcl_log_path, str(tgt_idx).zfill(6) +  "corres_est" + ".ply"), pcd)
+                
+            gt_points = se3_transform(gt_pose_np, obj_xyz)
+            est_points = se3_transform(pred_pose_np, obj_xyz)
+
+            pcd.points = o3d.utility.Vector3dVector(gt_points)
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, "obj_gt.ply"), pcd)
+
+            pcd.points = o3d.utility.Vector3dVector(est_points)
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, "obj_est.ply"), pcd)

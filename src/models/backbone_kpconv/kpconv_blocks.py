@@ -643,10 +643,8 @@ class SimpleBlock(nn.Module):
             stack_lengths = batch['stack_lengths'][self.layer_ind]
 
         x = self.KPConv(q_pts, s_pts, neighb_inds, x)
-        print("{0}  {1}".format(list(x.shape), list(stack_lengths.shape)))
-        result = self.batch_norm(x, stack_lengths)
-        result = self.leaky_relu(result)
-        return result
+
+        return self.leaky_relu(self.batch_norm(x, stack_lengths))
 
 
 class ResnetBottleneckBlock(nn.Module):
