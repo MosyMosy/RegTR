@@ -374,13 +374,21 @@ class GenericRegModel(GenericModel, ABC):
             o3d.io.write_point_cloud(os.path.join(
                 pcl_log_path, str(tgt_idx).zfill(6) + ".ply"), pcd)
             
-            # pcd.points = o3d.utility.Vector3dVector(scene_xyz[to_numpy(batch["tgt_overlap"][b])])
-            # o3d.io.write_point_cloud(os.path.join(
-            #     pcl_log_path, str(tgt_idx).zfill(6) +  "overlap_gt" + ".ply"), pcd)
+            pcd.points = o3d.utility.Vector3dVector(scene_xyz[to_numpy(batch["correspondences"][b][0])])
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, str(tgt_idx).zfill(6) +  "corres_source_gt" + ".ply"), pcd)
             
-            # pcd.points = o3d.utility.Vector3dVector(scene_xyz[np.array(to_numpy(pred["tgt_overlap"][b]), dtype=bool)])
-            # o3d.io.write_point_cloud(os.path.join(
-            #     pcl_log_path, str(tgt_idx).zfill(6) +  "overlap_est" + ".ply"), pcd)
+            pcd.points = o3d.utility.Vector3dVector(scene_xyz[to_numpy(batch["correspondences"][b][1])])
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, str(tgt_idx).zfill(6) +  "corres_target_gt" + ".ply"), pcd)
+            
+            pcd.points = o3d.utility.Vector3dVector(to_numpy(pred["corr_source"]).reshape(-1, 3))
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, str(tgt_idx).zfill(6) +  "corres_source_est" + ".ply"), pcd)
+            
+            pcd.points = o3d.utility.Vector3dVector(to_numpy(pred["corr_target"]).reshape(-1, 3))
+            o3d.io.write_point_cloud(os.path.join(
+                pcl_log_path, str(tgt_idx).zfill(6) +  "corres_target_est" + ".ply"), pcd)
             
             # pcd.points = o3d.utility.Vector3dVector(scene_xyz[to_numpy(batch["correspondences"][b][1])])
             # o3d.io.write_point_cloud(os.path.join(

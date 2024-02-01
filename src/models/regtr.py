@@ -232,6 +232,9 @@ class RegTR(GenericRegModel):
             'tgt_overlap': tgt_overlap_list,
 
             'pose': pred_pose_weighted,
+            
+            "corr_source": corr_all[b][..., :3], 
+            "corr_target": corr_all[b][..., 3:]
         }
         return outputs
 
