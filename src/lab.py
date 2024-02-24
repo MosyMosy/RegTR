@@ -18,9 +18,9 @@ def visualize_tless():
         obj_point_size = 2048
         scene_point_size = 20000
 
-    tless = T_Less(conf(), "train")
+    tless = T_Less(conf(), "train", is_visualize=True)
     print(len(tless))
-    scene_pcl, obj_pcl, scene_overlap, obj_overlap, scene_corr, obj_corr = tless[115]
+    scene_pcl, obj_pcl, scene_overlap, obj_overlap, scene_corr, obj_corr = tless[543]
 
     IO().save_pointcloud(Pointclouds(scene_pcl[None]), "scene_pcl.ply")
     IO().save_pointcloud(Pointclouds(scene_overlap[None]), "scene_overlap.ply")
@@ -150,11 +150,11 @@ def visulize_est():
                     pcl_log_path, "obj_est.ply"), pcd)
 
 
-visulize_est()
+# visulize_est()
 
 # generate_pcl(mode = "train", batch = 100, worker=2)
 # generate_pcl(mode = "test", batch = 10, worker=2)
 
 # generate_pcl_dataset("/export/livia/home/vision/Myazdanpanah/dataset/t-less/train_pbr", 40960)
 # generate_pcl_dataset("/export/livia/home/vision/Myazdanpanah/dataset/t-less/tless_test_primesense_bop19/test_primesense", 40960)
-# visualize_tless()
+visualize_tless()

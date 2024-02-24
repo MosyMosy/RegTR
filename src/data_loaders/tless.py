@@ -29,7 +29,7 @@ import cv2
                     
 class T_Less(Dataset):
 
-    def __init__(self, cfg, phase, transforms=None, obj_id_list=[5], vis_ratio = 0.7):
+    def __init__(self, cfg, phase, transforms=None, obj_id_list=[5], vis_ratio = 0.7, is_visualize=False):
         super().__init__()
         self.logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class T_Less(Dataset):
             self.logger.info(f'Loading data from {self.root}')
 
         self.cfg = cfg
+        self.is_visualize = is_visualize
 
         # set the directories related to the T-Less dataset
         self.train_dir = os.path.join(self.root, "train_pbr")
@@ -149,9 +150,10 @@ class T_Less(Dataset):
             src_overlap_mask[src_overlap_mask == True])/len(tgt_xyz)
 
         # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-        # # # for visualization
-        # src_xyz = se3_transform(pose, src_xyz)
-        # return torch.tensor(tgt_xyz), torch.tensor(src_xyz), torch.tensor(tgt_xyz[tgt_overlap_mask]), torch.tensor(src_xyz[src_overlap_mask]), torch.tensor(tgt_xyz[src_tgt_corr[1]]), torch.tensor(src_xyz[src_tgt_corr[0]])
+        # # for visualization
+        if self.is_visualize:
+            src_xyz = se3_transform(pose, src_xyz)
+            return torch.tensor(tgt_xyz), torch.tensor(src_xyz), torch.tensor(tgt_xyz[tgt_overlap_mask]), torch.tensor(src_xyz[src_overlap_mask]), torch.tensor(tgt_xyz[src_tgt_corr[1]]), torch.tensor(src_xyz[src_tgt_corr[0]])
         # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
         data_pair = {
